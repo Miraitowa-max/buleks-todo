@@ -1,11 +1,15 @@
 {
   "name": "buleks-todo",
-  "author": "__OWNER__",
-  "url": "https://github.com/__OWNER__/buleks-todo",
-  "version": "0.5.4",
+  "author": "1146850833@qq.com",
+  "url": "https://github.com/lfl-karl-el/buleks-todo",
+  "version": "0.5.5",
   "minAppVersion": "3.0.0",
-  "backends": ["all"],
-  "frontends": ["all"],
+  "backends": [
+    "all"
+  ],
+  "frontends": [
+    "all"
+  ],
   "displayName": {
     "default": "Buleks Todo",
     "zh-CN": "Blueks代办",
