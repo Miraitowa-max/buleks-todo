@@ -507,6 +507,18 @@
     background: var(--b3-theme-surface);
 }
 
+.tb-docrow-ops {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    gap: 2px;
+}
+
+.tb-docrow-ops .b3-button {
+    padding: 4px 6px;
+    font-size: 12px;
+}
+
 .tb-docbtn {
     display: inline-flex;
     align-items: center;

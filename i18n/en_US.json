@@ -135,5 +135,15 @@
   "batchDeleteConfirm": "Delete {0} selected todo(s)? This cannot be undone.",
   "batchDeleted": "Deleted {0} todos",
   "batchNoSelection": "Select todos first",
-  "batchNothingChanged": "Nothing to update"
+  "batchNothingChanged": "Nothing to update",
+  "relinkBtn": "Relink",
+  "relinkTitle": "Relink document",
+  "relinkHint": "Re-link after the original SiYuan doc was deleted or moved. Accepts:/n· Block ref: ((20260528100236-m90xogm \"title\"))\n· Link: siyuan://blocks/20260528100236-m90xogm\n· Raw 20-char block ID",
+  "relinkPlaceholder": "Paste block ref / siyuan:// link / block ID",
+  "relinkGo": "Relink",
+  "relinkInvalid": "Doc or block not found, please check whether the ID still exists",
+  "relinkDone": "Linked document updated",
+  "relinkCleared": "Linked document cleared",
+  "clearDoc": "Unlink",
+  "clearDocConfirm": "Clear the linked document? You can generate or link again later."
 }

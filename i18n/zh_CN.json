@@ -135,5 +135,15 @@
   "batchDeleteConfirm": "确定删除选中的 {0} 条待办？删除后不可恢复。",
   "batchDeleted": "已删除 {0} 条待办",
   "batchNoSelection": "请先勾选待办",
-  "batchNothingChanged": "选中待办无需更新"
+  "batchNothingChanged": "选中待办无需更新",
+  "relinkBtn": "修改关联",
+  "relinkTitle": "修改关联文档",
+  "relinkHint": "原关联的思源文档被删除或移动后，可在此改绑。支持粘贴：\n· 思源块引用，如 ((20260528100236-m90xogm \"标题\"))\n· 思源链接，如 siyuan://blocks/20260528100236-m90xogm\n· 直接粘贴 20 位块 ID",
+  "relinkPlaceholder": "粘贴块引用 / siyuan:// 链接 / 块 ID",
+  "relinkGo": "确认关联",
+  "relinkInvalid": "未找到该文档或块，请确认 ID 是否仍然存在",
+  "relinkDone": "已更新关联文档",
+  "relinkCleared": "已清除关联文档",
+  "clearDoc": "清除关联",
+  "clearDocConfirm": "确定清除该待办的关联文档？清除后可重新生成或再次关联。"
 }

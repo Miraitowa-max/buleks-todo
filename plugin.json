@@ -1,8 +1,8 @@
 {
   "name": "buleks-todo",
-  "author": "1146850833@qq.com",
+  "author": "lfl-karl-el",
   "url": "https://github.com/lfl-karl-el/buleks-todo",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "minAppVersion": "3.0.0",
   "backends": [
     "all"

@@ -153,6 +153,16 @@ const ZH = {
     importDone: "已导入 {0} 条待办",
     importEmpty: "没有解析到任何待办，请检查格式",
     linkedDoc: "关联思源文档",
+    relinkBtn: "修改关联",
+    relinkTitle: "修改关联文档",
+    relinkHint: "原关联的思源文档被删除或移动后，可在此改绑。支持粘贴：\n· 思源块引用，如 ((20260528100236-m90xogm \"标题\"))\n· 思源链接，如 siyuan://blocks/20260528100236-m90xogm\n· 直接粘贴 20 位块 ID",
+    relinkPlaceholder: "粘贴块引用 / siyuan:// 链接 / 块 ID",
+    relinkGo: "确认关联",
+    relinkInvalid: "未找到该文档或块，请确认 ID 是否仍然存在",
+    relinkDone: "已更新关联文档",
+    relinkCleared: "已清除关联文档",
+    clearDoc: "清除关联",
+    clearDocConfirm: "确定清除该待办的关联文档？清除后可重新生成或再次关联。",
     batchToggle: "批量",
     batchSelCount: "已选 {0} 项",
     batchSelectAll: "全选",
@@ -449,6 +459,94 @@ module.exports = class TodoHub extends Plugin {
             console.error("[buleks-todo] create doc failed", e);
             showMessage(String(e.message || e));
         }
+    }
+
+    /* ---------------- 修改关联文档 ---------------- */
+    // 从多种输入中提取思源块 ID：
+    // ((20260528100236-m90xogm "标题")) / siyuan://blocks/20260528100236-m90xogm / 裸 20 位 ID
+    extractBlockId(text) {
+        const s = String(text || "").trim();
+        if (!s) return "";
+        const RE = /[0-9]{14}-[a-z0-9]+/i;
+        const pats = [
+            s.match(/\(\(([0-9]{14}-[a-z0-9]+)/i),
+            s.match(/siyuan:\/\/blocks\/([0-9]{14}-[a-z0-9]+)/i),
+            RE.test(s) && !/\s/.test(s) ? s.match(RE) : null,
+        ];
+        for (const m of pats) if (m) return m[1] || m[0];
+        return "";
+    }
+
+    // 关联文档失效（被删除/移动）后改绑：校验块存在性，取文档 root 与路径
+    async relinkDoc(task) {
+        if (!task) return;
+        const dlg = new Dialog({
+            title: this.t("relinkTitle"),
+            width: "520px",
+            content: `<div class="b3-dialog__content">
+<div class="tb-dlg-text" style="white-space:pre-line">${esc(this.t("relinkHint"))}</div>
+<input class="b3-text-field fn__block" id="tbRelinkInput" style="margin-top:8px" placeholder="${esc(this.t("relinkPlaceholder"))}" />
+<div class="tb-dlg-actions"><button class="b3-button b3-button--cancel" id="tbNo">${esc(this.t("cancel"))}</button>
+<button class="b3-button b3-button--text" id="tbGo">${esc(this.t("relinkGo"))}</button></div></div>`,
+        });
+        const input = dlg.element.querySelector("#tbRelinkInput");
+        input.focus();
+        const submit = async () => {
+            const id = this.extractBlockId(input.value);
+            if (!id) {
+                showMessage(this.t("relinkInvalid"));
+                return;
+            }
+            try {
+                // 校验块是否仍然存在；被删除的块会返回非 0 code
+                const info = await this.api("/api/block/getBlockInfo", { id });
+                const rootId = (info && (info.rootID || info.rootId)) || id;
+                let hpath = "";
+                try {
+                    hpath = await this.api("/api/filetree/getHPathByID", { id: rootId });
+                } catch (e) { /* 文档路径取不到不阻塞关联 */ }
+                task.blockId = id;
+                task.docId = rootId;
+                if (hpath) task.docPath = hpath;
+                task.history.push({ ts: Date.now(), g: task.groupId, type: "doc", to: hpath || id });
+                this.save();
+                this.renderDetail();
+                dlg.destroy();
+                showMessage(this.t("relinkDone"));
+                this.openTaskDoc(task);
+            } catch (e) {
+                console.error("[buleks-todo] relink failed", e);
+                showMessage(this.t("relinkInvalid"));
+            }
+        };
+        dlg.element.querySelector("#tbNo").addEventListener("click", () => dlg.destroy());
+        dlg.element.querySelector("#tbGo").addEventListener("click", submit);
+        input.addEventListener("keydown", (ev) => {
+            if (ev.key === "Enter") submit();
+        });
+    }
+
+    // 解除关联：关联文档彻底删除后清空记录，恢复可重新生成文档的状态
+    clearDocLink(task) {
+        if (!task) return;
+        const dlg = new Dialog({
+            title: this.t("clearDoc"),
+            width: "460px",
+            content: `<div class="b3-dialog__content"><div class="tb-dlg-text" style="white-space:pre-line">${esc(this.t("clearDocConfirm"))}</div>
+<div class="tb-dlg-actions"><button class="b3-button b3-button--cancel" id="tbNo">${esc(this.t("cancel"))}</button>
+<button class="b3-button b3-button--text" id="tbYes">${esc(this.t("confirm"))}</button></div></div>`,
+        });
+        dlg.element.querySelector("#tbNo").addEventListener("click", () => dlg.destroy());
+        dlg.element.querySelector("#tbYes").addEventListener("click", () => {
+            dlg.destroy();
+            task.docId = "";
+            task.blockId = "";
+            task.docPath = "";
+            task.history.push({ ts: Date.now(), g: task.groupId, type: "doc-clear" });
+            this.save();
+            this.renderDetail();
+            showMessage(this.t("relinkCleared"));
+        });
     }
 
     /* ---------------- 历史待办导入 ---------------- */
@@ -1523,12 +1621,20 @@ module.exports = class TodoHub extends Plugin {
     ${task.docId
         ? `<div class="tb-docrow">
              <span class="tb-docrow-path" title="${esc(task.docPath || "")}">${esc(task.docPath || task.docId)}</span>
-             <button class="b3-button b3-button--text" data-act="open-doc" data-id="${task.id}">${esc(this.t("openDoc"))}</button>
+             <span class="tb-docrow-ops">
+               <button class="b3-button b3-button--text" data-act="open-doc" data-id="${task.id}">${esc(this.t("openDoc"))}</button>
+               <button class="b3-button b3-button--text" data-act="edit-doc" data-id="${task.id}">${esc(this.t("relinkBtn"))}</button>
+               <button class="b3-button b3-button--text" data-act="clear-doc" data-id="${task.id}" style="color:var(--b3-theme-error)">${esc(this.t("clearDoc"))}</button>
+             </span>
            </div>`
         : task.blockId
         ? `<div class="tb-docrow">
              <span class="tb-docrow-path" title="${esc(task.blockId)}">${esc(this.t("linkedDoc"))}</span>
-             <button class="b3-button b3-button--text" data-act="open-doc" data-id="${task.id}">${esc(this.t("openDoc"))}</button>
+             <span class="tb-docrow-ops">
+               <button class="b3-button b3-button--text" data-act="open-doc" data-id="${task.id}">${esc(this.t("openDoc"))}</button>
+               <button class="b3-button b3-button--text" data-act="edit-doc" data-id="${task.id}">${esc(this.t("relinkBtn"))}</button>
+               <button class="b3-button b3-button--text" data-act="clear-doc" data-id="${task.id}" style="color:var(--b3-theme-error)">${esc(this.t("clearDoc"))}</button>
+             </span>
            </div>`
         : `<button class="tb-docbtn" data-act="create-doc"><svg><use xlink:href="#iconFile"></use></svg>${esc(this.t("createDoc"))}</button>`}
   </div>
@@ -1574,6 +1680,12 @@ module.exports = class TodoHub extends Plugin {
                 break;
             case "open-doc":
                 this.openTaskDoc(this.board.tasks.find((x) => x.id === el.dataset.id));
+                break;
+            case "edit-doc":
+                this.relinkDoc(this.board.tasks.find((x) => x.id === el.dataset.id) || this.selectedTask());
+                break;
+            case "clear-doc":
+                this.clearDocLink(this.selectedTask());
                 break;
             case "create-doc":
                 this.createTaskDoc(this.selectedTask());
@@ -1858,6 +1970,13 @@ module.exports = class TodoHub extends Plugin {
                 }
             },
         });
+        if (task.docId || task.blockId) {
+            menu.addItem({
+                icon: "iconRefresh",
+                label: this.t("relinkBtn"),
+                click: () => this.relinkDoc(task),
+            });
+        }
         menu.addSeparator();
         STATUSES.forEach((s) => {
             menu.addItem({
