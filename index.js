@@ -1679,7 +1679,7 @@ module.exports = class TodoHub extends Plugin {
                 this.openImportDialog();
                 break;
             case "open-doc":
-                this.openTaskDoc(this.board.tasks.find((x) => x.id === el.dataset.id));
+                this.openTaskDoc(this.board.tasks.find((x) => x.id === el.dataset.id) || this.allFiledTasks().find((x) => x.id === el.dataset.id));
                 break;
             case "edit-doc":
                 this.relinkDoc(this.board.tasks.find((x) => x.id === el.dataset.id) || this.selectedTask());
